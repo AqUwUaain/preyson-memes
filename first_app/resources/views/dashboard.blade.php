@@ -60,10 +60,6 @@
             font-size: 0.95rem;
         }
 
-        .btn-live:hover {
-            color: #eab308;
-        }
-
         .btn-logout {
             background: #faf5ff;
             color: #7e22ce;
@@ -73,29 +69,12 @@
             cursor: pointer;
             font-weight: 700;
             font-size: 0.85rem;
-            transition: all 0.2s;
-        }
-
-        .btn-logout:hover {
-            background: #ef4444;
-            color: #ffffff;
-            border-color: #ef4444;
         }
 
         .container {
-            max-width: 900px;
+            max-width: 960px;
             margin: 2.5rem auto;
             padding: 0 1.5rem;
-        }
-
-        .welcome-header {
-            margin-bottom: 2rem;
-        }
-
-        .welcome-header h1 {
-            font-size: 2.2rem;
-            color: #3b0764;
-            font-weight: 900;
         }
 
         .alert-success {
@@ -108,16 +87,6 @@
             margin-bottom: 2rem;
         }
 
-        .alert-error {
-            background: #fee2e2;
-            border: 2px solid #f87171;
-            color: #991b1b;
-            padding: 0.9rem 1.25rem;
-            border-radius: 12px;
-            margin-bottom: 2rem;
-            font-weight: 600;
-        }
-
         .upload-card {
             background: #ffffff;
             border: 2px solid #f3e8ff;
@@ -127,21 +96,8 @@
             margin-bottom: 3rem;
         }
 
-        .upload-card h2 {
-            font-size: 1.4rem;
-            color: #3b0764;
-            font-weight: 800;
-            margin-bottom: 0.5rem;
-        }
-
-        .upload-card p.subtitle {
-            color: #6b21a8;
-            font-size: 0.9rem;
-            margin-bottom: 1.5rem;
-        }
-
         .form-group {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
         }
 
         .form-group label {
@@ -152,8 +108,7 @@
             font-size: 0.95rem;
         }
 
-        .form-group input[type="text"],
-        .form-group input[type="file"] {
+        .form-group input {
             width: 100%;
             padding: 0.85rem 1rem;
             border-radius: 10px;
@@ -162,11 +117,6 @@
             color: #3b0764;
             font-size: 1rem;
             outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .form-group input:focus {
-            border-color: #eab308;
         }
 
         .btn-yellow {
@@ -179,24 +129,33 @@
             font-weight: 800;
             border-radius: 10px;
             cursor: pointer;
-            transition: transform 0.1s, box-shadow 0.1s;
         }
 
-        .btn-yellow:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 0 #ca8a04;
+        .batch-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #faf5ff;
+            border: 2px solid #f3e8ff;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
         }
 
-        .btn-yellow:active {
-            transform: translateY(2px);
-            box-shadow: 0 1px 0 #ca8a04;
-        }
-
-        .history h3 {
-            font-size: 1.3rem;
-            margin-bottom: 1rem;
-            color: #3b0764;
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 0.6rem 1.25rem;
+            border-radius: 8px;
             font-weight: 800;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn-danger:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
         }
 
         .grid-history {
@@ -206,10 +165,23 @@
         }
 
         .history-card {
-            border: 1px solid #e9d5ff;
+            border: 2px solid #f3e8ff;
             border-radius: 12px;
             overflow: hidden;
-            background: #faf5ff;
+            background: #ffffff;
+            position: relative;
+            box-shadow: 0 4px 10px rgba(59, 7, 100, 0.04);
+        }
+
+        .history-card input[type="checkbox"] {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 22px;
+            height: 22px;
+            accent-color: #7c3aed;
+            cursor: pointer;
+            z-index: 5;
         }
 
         .history-card img, .history-card video {
@@ -235,10 +207,10 @@
     <nav>
         <div class="brand-container">
             <img src="{{ asset('logo.png') }}" alt="PreySON Logo" class="brand-logo">
-            <span class="brand-title">PreySON Creator Studio</span>
+            <span class="brand-title">PreySON Studio</span>
         </div>
         <div class="nav-actions">
-            <a href="/" class="btn-live" target="_blank">View Live Feed &nearr;</a>
+            <a href="/" class="btn-live" target="_blank">View Public Feed &nearr;</a>
             <form action="/logout" method="POST" style="display:inline;">
                 @csrf
                 <button type="submit" class="btn-logout">Sign Out</button>
@@ -247,61 +219,71 @@
     </nav>
 
     <div class="container">
-        <div class="welcome-header">
-            <h1>Upload Center</h1>
-            <p style="color: #6b21a8; font-weight: 600;">Drop your memes, videos, GIFs, or batch-upload an entire ZIP archive.</p>
-        </div>
+        <h1 style="font-size: 2.2rem; font-weight: 900; margin-bottom: 1.5rem;">Manage Vault</h1>
 
         @if(session('success'))
-            <div class="alert-success">
-                {{ session('success') }}
-            </div>
-        @endif
-
-        @if($errors->any())
-            <div class="alert-error">
-                @foreach ($errors->all() as $error)
-                    <p>{{ $error }}</p>
-                @endforeach
-            </div>
+            <div class="alert-success">{{ session('success') }}</div>
         @endif
 
         <div class="upload-card">
-            <h2>Upload Content</h2>
-            <p class="subtitle">Supports single files (PNG, JPG, GIF, MP4) or complete .ZIP archives. For ZIP uploads, each file's name is used as the meme title.</p>
-            
+            <h2 style="margin-bottom: 1rem; font-weight: 800;">Upload Single or Batch (.ZIP)</h2>
             <form action="{{ route('posts.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="form-group">
-                    <label for="title">Meme Title / Caption (Optional if uploading ZIP)</label>
-                    <input type="text" id="title" name="title" placeholder="Leave blank to use original file name">
+                    <label for="title">Title / Caption (Optional)</label>
+                    <input type="text" id="title" name="title" placeholder="Auto-generated from filename if empty">
                 </div>
-
                 <div class="form-group">
-                    <label for="media">Select File or .ZIP Archive</label>
+                    <label for="media">Select Media or .ZIP</label>
                     <input type="file" id="media" name="media" accept="image/*,video/mp4,video/webm,video/quicktime,.zip" required>
                 </div>
-
-                <button type="submit" class="btn-yellow">🚀 Publish Media</button>
+                <button type="submit" class="btn-yellow">🚀 Upload to Vault</button>
             </form>
         </div>
 
-        <div class="history">
-            <h3>Uploaded Content ({{ $posts->count() }})</h3>
+        <form id="batchDeleteForm" action="{{ route('posts.batchDelete') }}" method="POST">
+            @csrf
+            @method('DELETE')
+
+            <div class="batch-bar">
+                <div>
+                    <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" style="width: 18px; height: 18px; accent-color: #7c3aed; vertical-align: middle;">
+                    <label for="selectAll" style="font-weight: 800; margin-left: 0.5rem; cursor: pointer;">Select All (<span id="selectedCount">0</span> selected)</label>
+                </div>
+                <button type="submit" id="deleteBtn" class="btn-danger" disabled onclick="return confirm('Are you sure you want to delete the selected memes?')">
+                    🗑️ Delete Selected
+                </button>
+            </div>
+
             <div class="grid-history">
                 @foreach($posts as $post)
                     <div class="history-card">
+                        <input type="checkbox" name="post_ids[]" value="{{ $post->id }}" class="post-checkbox" onchange="updateCount()">
                         @if($post->media_type === 'video')
                             <video src="{{ asset('storage/' . $post->media_path) }}"></video>
                         @else
                             <img src="{{ asset('storage/' . $post->media_path) }}" alt="{{ $post->title }}">
                         @endif
-                        <p>{{ $post->title }}</p>
+                        <p title="{{ $post->title }}">{{ $post->title }}</p>
                     </div>
                 @endforeach
             </div>
-        </div>
+        </form>
     </div>
+
+    <script>
+        function toggleSelectAll(master) {
+            const checkboxes = document.querySelectorAll('.post-checkbox');
+            checkboxes.forEach(cb => cb.checked = master.checked);
+            updateCount();
+        }
+
+        function updateCount() {
+            const checked = document.querySelectorAll('.post-checkbox:checked').length;
+            document.getElementById('selectedCount').innerText = checked;
+            document.getElementById('deleteBtn').disabled = checked === 0;
+        }
+    </script>
 
 </body>
 </html>

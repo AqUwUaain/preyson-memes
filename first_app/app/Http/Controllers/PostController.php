@@ -10,17 +10,28 @@ use ZipArchive;
 
 class PostController extends Controller
 {
+    private function cleanDriveFilename(string $name): string
+    {
+        // Decode URL encoded characters (e.g. %20 -> space, etc)
+        $decoded = urldecode($name);
+
+        // Fix common Google Drive export substitutions:
+        // Converts "Don_t" or "ain_t" patterns back to natural contractions
+        $restored = preg_replace('/(\b[a-zA-Z]+)_(t|s|d|ll|ve|re|m)\b/i', '$1\'$2', $decoded);
+
+        return trim($restored);
+    }
+
     public function store(Request $request)
     {
         $request->validate([
-            'media' => 'required|file|mimes:jpeg,png,jpg,gif,webp,mp4,webm,mov,zip|max:102400',
+            'media' => 'required|file|max:102400',
             'title' => 'nullable|string|max:255',
         ]);
 
         $file = $request->file('media');
         $extension = strtolower($file->getClientOriginalExtension());
 
-        // Handle ZIP Uploads
         if ($extension === 'zip') {
             $zip = new ZipArchive;
 
@@ -31,7 +42,6 @@ class PostController extends Controller
                 for ($i = 0; $i < $zip->numFiles; $i++) {
                     $entryName = $zip->getNameIndex($i);
 
-                    // Skip hidden system files and subfolders
                     if (str_starts_with($entryName, '__MACOSX/') || str_ends_with($entryName, '/') || str_starts_with(basename($entryName), '.')) {
                         continue;
                     }
@@ -47,12 +57,12 @@ class PostController extends Controller
                             $storedPath = 'memes/' . Str::random(40) . '.' . $fileExt;
                             Storage::disk('public')->put($storedPath, $contents);
 
-                            // Exact filename without the extension
-                            $exactFileName = pathinfo($entryName, PATHINFO_FILENAME);
+                            $rawFileName = pathinfo($entryName, PATHINFO_FILENAME);
+                            $cleanTitle = $this->cleanDriveFilename($rawFileName);
                             $mediaType = in_array($fileExt, ['mp4', 'webm', 'mov']) ? 'video' : 'image';
 
                             Post::create([
-                                'title' => $exactFileName,
+                                'title' => $cleanTitle ?: 'Untitled Meme',
                                 'media_path' => $storedPath,
                                 'media_type' => $mediaType,
                             ]);
@@ -64,18 +74,18 @@ class PostController extends Controller
 
                 $zip->close();
 
-                return redirect('/dashboard')->with('success', "Batch import complete! Added {$count} memes with exact file titles.");
+                return redirect('/dashboard')->with('success', "Batch import complete! {$count} memes added.");
             }
 
             return back()->withErrors(['media' => 'Unable to read this ZIP archive.']);
         }
 
-        // Handle Single File Upload
+        // Single file upload
         $path = $file->store('memes', 'public');
         $mediaType = in_array($extension, ['mp4', 'webm', 'mov']) ? 'video' : 'image';
         $title = $request->filled('title') 
             ? $request->title 
-            : pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+            : $this->cleanDriveFilename(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME));
 
         Post::create([
             'title' => $title,
@@ -84,5 +94,22 @@ class PostController extends Controller
         ]);
 
         return redirect('/dashboard')->with('success', 'Meme published successfully!');
+    }
+
+    public function batchDelete(Request $request)
+    {
+        $request->validate([
+            'post_ids' => 'required|array',
+            'post_ids.*' => 'exists:posts,id',
+        ]);
+
+        $posts = Post::whereIn('id', $request->post_ids)->get();
+
+        foreach ($posts as $post) {
+            Storage::disk('public')->delete($post->media_path);
+            $post->delete();
+        }
+
+        return redirect('/dashboard')->with('success', count($posts) . ' meme(s) deleted successfully!');
     }
 }

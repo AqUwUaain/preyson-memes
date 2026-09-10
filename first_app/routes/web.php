@@ -40,3 +40,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/posts', [PostController::class, 'store'])->name('posts.store');
     Route::post('/posts/zip', [PostController::class, 'storeZip'])->name('posts.zip');
 });
+Route::middleware('auth')->group(function () {
+    Route::get('/dashboard', function () {
+        $posts = Post::latest()->get();
+        return view('dashboard', compact('posts'));
+    });
+
+    Route::post('/posts', [PostController::class, 'store'])->name('posts.store');
+    Route::delete('/posts/batch-delete', [PostController::class, 'batchDelete'])->name('posts.batchDelete');
+});
